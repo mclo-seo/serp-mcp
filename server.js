@@ -7,9 +7,18 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.send("SERP MCP server running");
+});
+
 app.get("/serp", async (req, res) => {
   try {
+
     const keyword = req.query.keyword;
+
+    if (!keyword) {
+      return res.status(400).json({ error: "keyword parameter required" });
+    }
 
     const response = await axios.get("https://serpapi.com/search.json", {
       params: {
@@ -22,30 +31,42 @@ app.get("/serp", async (req, res) => {
       }
     });
 
-    const data = response.data;
+    const data = response.data || {};
 
-    const aiOverview = data.ai_overview || null;
+    const aiOverview = data.ai_overview || {};
     const paa = data.people_also_ask || [];
-    const organic = (data.organic_results || []).slice(0, 5);
+    const organic = data.organic_results || [];
+
+    const aiSummary =
+      aiOverview.text_blocks?.map(b => b.snippet).filter(Boolean).slice(0,5) || [];
+
+    const aiSources =
+      aiOverview.references?.map(r => ({
+        title: r.title,
+        link: r.link
+      })) || [];
 
     res.json({
       keyword,
-      ai_overview_present: !!aiOverview,
-      ai_overview_summary: aiOverview?.text_blocks?.map(b => b.snippet).filter(Boolean) || [],
-      ai_overview_sources: aiOverview?.references?.map(r => ({
-        title: r.title,
-        link: r.link
-      })) || [],
+      ai_overview_present: !!data.ai_overview,
+      ai_overview_summary: aiSummary,
+      ai_overview_sources: aiSources,
       people_also_ask: paa.map(q => q.question),
-      top_ranking_pages: organic.map(r => ({
+      top_ranking_pages: organic.slice(0,5).map(r => ({
         title: r.title,
         link: r.link
       }))
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "SERP request failed" });
+
+    console.error("SERP ERROR:", error.message);
+
+    res.status(500).json({
+      error: "SERP request failed",
+      message: error.message
+    });
+
   }
 });
 
