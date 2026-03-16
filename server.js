@@ -31,14 +31,23 @@ app.get("/serp", async (req, res) => {
       }
     });
 
-    const data = response.data || {};
+const data = response.data || {};
 
-    const aiOverview = data.ai_overview || {};
-    const paa = data.people_also_ask || [];
-    const organic = data.organic_results || [];
+/* Detect AI Overview in multiple possible locations */
 
+const aiOverview =
+  data.ai_overview ||
+  data.inline_ai_overview ||
+  data.ai_overview_results ||
+  data.knowledge_graph?.ai_overview ||
+  null;
+
+const paa = data.people_also_ask || [];
+const organic = data.organic_results || [];
     const aiSummary =
-      aiOverview.text_blocks?.map(b => b.snippet).filter(Boolean).slice(0,5) || [];
+  aiOverview?.text_blocks?.map(b => b.snippet).filter(Boolean).slice(0,5) ||
+  aiOverview?.snippet ? [aiOverview.snippet] :
+  [];
 
     const aiSources =
       aiOverview.references?.map(r => ({
@@ -48,7 +57,7 @@ app.get("/serp", async (req, res) => {
 
     res.json({
       keyword,
-      ai_overview_present: !!data.ai_overview,
+      ai_overview_present: !!aiOverview,
       ai_overview_summary: aiSummary,
       ai_overview_sources: aiSources,
       people_also_ask: paa.map(q => q.question),
