@@ -32,6 +32,29 @@ app.get("/serp", async (req, res) => {
     });
 
 const data = response.data || {};
+/* Detect SERP features */
+
+const serpFeatures = [];
+
+if (data.ai_overview) serpFeatures.push("AI Overview");
+
+if (data.answer_box) serpFeatures.push("Featured Snippet");
+
+if (data.people_also_ask && data.people_also_ask.length > 0)
+  serpFeatures.push("People Also Ask");
+
+if (data.video_results && data.video_results.length > 0)
+  serpFeatures.push("Video Pack");
+
+if (data.local_results) serpFeatures.push("Local Pack");
+
+if (data.shopping_results) serpFeatures.push("Shopping Results");
+
+if (data.discussions_and_forums)
+  serpFeatures.push("Discussions / Forums");
+
+if (data.knowledge_graph)
+  serpFeatures.push("Knowledge Panel");
 
 /* Detect AI Overview in multiple possible locations */
 
@@ -57,6 +80,7 @@ const organic = data.organic_results || [];
 
     res.json({
       keyword,
+serp_features: serpFeatures,
       ai_overview_present: !!aiOverview,
       ai_overview_summary: aiSummary,
       ai_overview_sources: aiSources,
