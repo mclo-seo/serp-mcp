@@ -1,14 +1,11 @@
-import express from "express";
-import axios from "axios";
-import cors from "cors";
-import dotenv from "dotenv";
+require("dotenv").config();
 
-dotenv.config();
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
 
 const app = express();
 app.use(cors());
-
-const PORT = 3000;
 
 app.get("/serp", async (req, res) => {
   try {
@@ -34,8 +31,11 @@ app.get("/serp", async (req, res) => {
     res.json({
       keyword,
       ai_overview_present: !!aiOverview,
-      ai_overview_summary: aiOverview?.text_blocks || [],
-      ai_overview_sources: aiOverview?.references || [],
+      ai_overview_summary: aiOverview?.text_blocks?.map(b => b.snippet).filter(Boolean) || [],
+      ai_overview_sources: aiOverview?.references?.map(r => ({
+        title: r.title,
+        link: r.link
+      })) || [],
       people_also_ask: paa.map(q => q.question),
       top_ranking_pages: organic.map(r => ({
         title: r.title,
@@ -48,31 +48,9 @@ app.get("/serp", async (req, res) => {
     res.status(500).json({ error: "SERP request failed" });
   }
 });
-  try {
-    const response = await axios.get("https://serpapi.com/search.json", {
-      params: {
-        q: keyword,
-        engine: "google",
-        gl: "us",
-        hl: "en",
-        api_key: process.env.SERPAPI_KEY
-      }
-    });
 
-    const data = response.data;
-
-    res.json({
-      ai_overview: data.ai_overview || null,
-      people_also_ask: data.related_questions || [],
-      organic_results: data.organic_results || [],
-      serp_features: data.search_information || {}
-    });
-
-  } catch (error) {
-    res.status(500).json({ error: "SERP request failed" });
-  }
-});
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`SERP MCP server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
