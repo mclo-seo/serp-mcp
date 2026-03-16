@@ -67,16 +67,31 @@ const aiOverview =
 
 const paa = data.people_also_ask || [];
 const organic = data.organic_results || [];
-    const aiSummary =
-  aiOverview?.text_blocks?.map(b => b.snippet).filter(Boolean).slice(0,5) ||
-  aiOverview?.snippet ? [aiOverview.snippet] :
-  [];
+    let aiSummary = [];
 
-    const aiSources =
-      aiOverview.references?.map(r => ({
-        title: r.title,
-        link: r.link
-      })) || [];
+if (aiOverview?.text_blocks) {
+  aiSummary = aiOverview.text_blocks
+    .map(b => b.snippet)
+    .filter(Boolean)
+    .slice(0,5);
+}
+
+else if (aiOverview?.snippet) {
+  aiSummary = [aiOverview.snippet];
+}
+
+else if (aiOverview?.answer) {
+  aiSummary = [aiOverview.answer];
+}
+
+    let aiSources = [];
+
+if (aiOverview?.references) {
+  aiSources = aiOverview.references.map(r => ({
+    title: r.title,
+    link: r.link
+  }));
+}
 
     res.json({
       keyword,
